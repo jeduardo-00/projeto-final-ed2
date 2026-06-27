@@ -113,3 +113,5 @@ void hash_liberar(TabelaHash* th) {
     free(th->tabela);
     free(th);
 }
+
+//nnn

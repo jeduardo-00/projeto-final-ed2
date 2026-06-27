@@ -33,4 +33,4 @@ double hash_obter_fator_carga(TabelaHash* th);
 int hash_obter_colisoes(TabelaHash* th);
 
 
-#endif // HASH_H
+#endif // HASH_H // hash

@@ -9,8 +9,8 @@ typedef struct No {
 
  
 typedef struct {           //Encapsula o vetor principal e as variáveis necessárias para as métricas do relatório.
-    No** tabela;           // Vetor de ponteiros (ponteiro duplo) que armazena os nós heads das listas
-    int tamanho;           // Tamanho máximo da tabela (M) - Ideal que seja um número primo
+    No** tabela;           // Vetor de ponteiros ponteiro duplo que armazena os nós heads das listas
+    int tamanho;           // Tamanho máximo da tabela (M)  Ideal que seja um número primo
     int quantidade;        // Quantidade de elementos atualmente inseridos (N)
     int contador_colisoes; // Armazena a quantidade de colisões reais identificadas no sistema
 } TabelaHash;
@@ -21,13 +21,13 @@ typedef struct {           //Encapsula o vetor principal e as variáveis necess�
 
 TabelaHash* hash_criar(int tamanho_inicial);    // Cria a estrutura na memória RAM e limpa as posições
 
-unsigned int hash_funcao(const char* texto, int tamanho_tabela);    // Transforma o ID de texto em um índice numérico válido (Algoritmo DJB2)
+unsigned int hash_funcao(const char* texto, int tamanho_tabela);    // Transforma o ID de texto em um índice numérico válido Algoritmo DJB2
 
 int hash_inserir(TabelaHash* th, const char* id);        // Insere um novo usuário na tabela se ele já não existir
 
 int hash_buscar(TabelaHash* th, const char* id);    // Procura por um usuário na tabela (Retorna 1 se achar, 0 se não)
 
-void hash_liberar(TabelaHash* th);       // Libera toda a memória alocada dinamicamente para evitar vazamentos (Memory Leaks)
+void hash_liberar(TabelaHash* th);       // Libera toda a memória alocada dinamicamente para evitar vazamentos 
 
 //FUNÇÕES ULTILIZADAS NO RELATÓRIO
 

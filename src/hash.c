@@ -9,8 +9,8 @@
 
 
  TabelaHash* hash_criar(int tamanho_inicial) {
-    TabelaHash* th = (TabelaHash*)malloc(sizeof(TabelaHash));    // Aloca a estrutura que gerencia o tamanho, quantidade e colisões
-    if (!th) return NULL;                                        // Proteção contra falta de memória na RAM
+    TabelaHash* th = (TabelaHash*)malloc(sizeof(TabelaHash));    // Aloca a estrutura gerenciando o tamanho e quantidade e colisões
+    if (!th) return NULL;                                        // Proteção contra falta de memória na RAM 
 
     th->tamanho = tamanho_inicial;
     th->quantidade = 0;
@@ -18,8 +18,8 @@
     
        
         
-    th->tabela = (No**)calloc(tamanho_inicial, sizeof(No*));       // Aloca o vetor de ponteiros para nós usando 'calloc'.
-    if (!th->tabela) {                                             // Isso é vital para sabermos se uma posição do vetor está livre ou já ocupada.
+    th->tabela = (No**)calloc(tamanho_inicial, sizeof(No*));       // Aloca o vetor de ponteiros para nós usando calloc
+    if (!th->tabela) {                                             // Isso é vital para sabermos se uma posição do vetor está livre ou já ocupada
         free(th);                                                  // Libera o bloco anterior se esta segunda alocação falhar
         return NULL;
     }
@@ -30,7 +30,7 @@
 
 unsigned int hash_funcao(const char* texto, int tamanho_tabela) {   //FUNÇÃO HASH - MODELO MATEMÁTICO DJB2
 
-    unsigned long hash = 5381;                     // Número primo inicial (mágico) escolhido empiricamente por gerar menos colisões
+    unsigned long hash = 5381;                     // Número primo inicial pré determinado pela função escolhido empiricamente por gerar menos colisões
     int caractere;
     
     while ((caractere = *texto++)) {               // Laço que percorre letra por letra da string até encontrar o fim '\0'
@@ -39,7 +39,7 @@ unsigned int hash_funcao(const char* texto, int tamanho_tabela) {   //FUNÇÃO H
         hash = ((hash << 5) + hash) + caractere;  // Multiplicação por 33 usando deslocamento de bits (hash << 5 equivalendo a hash * 32) + o próprio hash.
     }
     
-   return hash % tamanho_tabela;                  // O operador resto (%) garante que o resultado caia dentro dos limites dos índices da nossa tabela
+   return hash % tamanho_tabela;                  // O operador resto % garante que o resultado caia dentro dos limites dos índices da nossa tabela
 }
 
 
@@ -59,7 +59,7 @@ int hash_inserir(TabelaHash* th, const char* id) {    //INSERÇÃO DE ELEMENTOS 
 
     
     if (th->tabela[indice] != NULL) {                  // Se o vetor naquele índice não for NULL, significa que um elemento já mora lá.
-        th->contador_colisoes++;                       // Logo, uma colisão real de chaves sinônimas acabou de acontecer!
+        th->contador_colisoes++;                       // Logo, uma colisão real de chaves sinônimas acabou de acontecer
     }
 
     
@@ -67,7 +67,7 @@ int hash_inserir(TabelaHash* th, const char* id) {    //INSERÇÃO DE ELEMENTOS 
     if (!novo_no) return 0;
     
     
-    strncpy(novo_no->id, id, sizeof(novo_no->id) - 1);   // Copia a string de forma segura limitando os caracteres para evitar estouro de buffer (buffer overflow)
+    strncpy(novo_no->id, id, sizeof(novo_no->id) - 1);   // Copia a string de forma segura limitando os caracteres para evitar estouro de bits 
     novo_no->id[sizeof(novo_no->id) - 1] = '\0';         // Garante o caractere nulo terminal
   
     
@@ -76,7 +76,7 @@ int hash_inserir(TabelaHash* th, const char* id) {    //INSERÇÃO DE ELEMENTOS 
     th->tabela[indice] = novo_no;                      // e o topo do vetor passa a apontar para o novo nó. Mantém o tempo fixo O(1).
     th->quantidade++; 
 
-    return 1;                                          // Inserido com sucesso!
+    return 1;                                          // Foi enserido na tabela
 } 
 
 
@@ -91,18 +91,18 @@ int hash_buscar(TabelaHash* th, const char* id) {           //BUSCA DE ELEMENTOS
      
     while (atual != NULL) {                                 // Percorre linearmente apenas a pequena lista encadeada daquele índice específico
         if (strcmp(atual->id, id) == 0) {                            
-            return 1;                                       // Registro encontrado com sucesso!
+            return 1;                                       // Se retorna 1, foi encontrado com sucesso.
         }
-        atual = atual->proximo;                             // Avança para o próximo nó conectado da lista
+        atual = atual->proximo;                             // Avança para o próximo nó conectado da lista Caso não encontre o ID escolhido
     }
     return 0;                                               // Se a lista chegou ao fim (NULL) e não achou nada, o usuário não existe
 }
 
 
  
- double hash_obter_fator_carga(TabelaHash* th) {             //OBTENÇÃO DO FATOR DE CARGA (Métrica Quantitativa)
+ double hash_obter_fator_carga(TabelaHash* th) {             //OBTENÇÃO DO FATOR DE CARGA
     if (!th || th->tamanho == 0) return 0.0;                //Calcula o nível de ocupação/estresse da tabela (Alpha = N / M)
-    return (double)th->quantidade / th->tamanho;            // O cast '(double)' é obrigatório para que o C não descarte as casas decimais da divisão
+    return (double)th->quantidade / th->tamanho;           
 }
 
 
@@ -113,7 +113,7 @@ int hash_obter_colisoes(TabelaHash* th) {   //OBTENÇÃO DE COLISÕES
 }
 
 
-void hash_liberar(TabelaHash* th) {                          //LIBERAÇÃO DE MEMÓRIA (Destrutor da Estrutura)
+void hash_liberar(TabelaHash* th) {                          //LIBERAÇÃO DE MEMÓRIA 
     if (!th) return;                                         //Limpa toda a alocação dinâmica do programa de dentro para fora para evitar memory leaks.
 
     

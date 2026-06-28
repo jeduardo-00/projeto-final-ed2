@@ -9,16 +9,20 @@
 */
 
 // Cria o Filtro de Bloom recebendo diretamente o tamanho do vetor em bits (m)
-filtroBloom *criar_bloom(int m)
+filtroBloom *criar_bloom(int n_esperado)
 {
     filtroBloom *novo_filtro = (filtroBloom *)malloc(sizeof(filtroBloom));
     if (!novo_filtro) {
         return NULL;
     }
 
+    // 1. Aplica a fórmula matemática para ~1% de falso positivo: m = n 9.58
+    // O uso do ceil() garante o arredondamento para cima do número de bits.
+    int m = (int)ceil(n_esperado * FATOR_M);
+
     novo_filtro->tam_vetor = m;
 
-    // Converte bits em bytes ? o (+7) garante arredondamento para cima
+    // 2. Converte bits em bytes (+7 garante arredondamento para cima)
     int tamanho_bytes = (m + 7) / 8;
 
     novo_filtro->vetor_bits = (uint8_t *)calloc(tamanho_bytes, sizeof(uint8_t));
@@ -28,8 +32,10 @@ filtroBloom *criar_bloom(int m)
         return NULL;
     }
 
-    printf("[DEBUG] Bloom criado: m=%d bits (~%d bytes), k=%d hashes\n",
-           m, tamanho_bytes, QTD_SEMENTES);
+    printf("[DEBUG] Bloom dimensionado dinamicamente:\n");
+    printf("        - Elementos esperados (n): %d\n", n_esperado);
+    printf("        - Tamanho em bits (m): %d (~%d bytes)\n", m, tamanho_bytes);
+    printf("        - Hashes aplicadas (k): %d\n", QTD_SEMENTES);
 
     return novo_filtro;
 }

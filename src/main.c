@@ -1,6 +1,8 @@
 #include <stdio.h> 
 #include <string.h>
 #include <time.h>
+#include "hash.h"       
+#include "bloom.h"       
 
 // Estruturas
 enum Opcoes
@@ -19,9 +21,9 @@ typedef struct
     int busca_evitada;
     int falso_positivo;
     int contadorTime;
-    double tempoMed;
+    int contadorBloom;
+    double tempoTotal;
     
-
 }Estatistica;
 
 
@@ -35,14 +37,24 @@ void menuBusca();
 
 // Variáveis globais
 Estatistica relatorio = {0};
+TabelaHash *hash;
+filtroBloom *bloom;
 
+// Constantes
 
+// Tamanho da tabela calculada de acordo o fator de carga
+#define TAM 1429 // 1000
+// #define TAM 114293 // 10000
+// #define TAM 142867 // 100000
 int main()
 {
+    // Criando a tabela
+    hash = hash_criar(TAM);
+    // bloom = criar_bloom(TAM);
+
     enum Opcoes op ;
     do
     {
-
         menu();
         scanf("%d", &op);
         switch (op)
@@ -96,23 +108,28 @@ void menuBusca()
 void inserir()
 {
     char usuario[12];
-    char verifica_cadastro = 1; // TESTE
+    int verifica_tabela = 0; // TESTE
+    int verifica_bloom = 1; // TESTE
     printf("----------CADASTRO DE USUARIO----------\n");
     printf("Usuario: ");
     scanf("%s", usuario);
 
     printf("Dados enviado para a funcao: %s\n", usuario);
+    
+    verifica_tabela = hash_inserir(hash,usuario);
+    // Funcao para filtro de bloom
 
-    // Funcao para envio
-    if (verifica_cadastro == 1)
+    // Funcao para envio 1
+    if (verifica_tabela == 1 && verifica_bloom == 1)
     {
         printf("Usuario cadastrado\n");
         relatorio.quantidade_elemento++;
     }
+    else
+    {
+        printf("Usuario nao foi cadastrado\n");
+    }
     
-    // Funcao para tabela hash
-    // Funcao para filtro de bloom
-    relatorio.quantidade_elemento++;
 }
 void consultar()
 {
@@ -127,12 +144,14 @@ void consultar()
     menuBusca();
     scanf("%d",&op);
 
+    // Sem filtro
     if (op == 1)
     {
-        // FUNÇÃO DE VERIFICAR A TABELA
-
         // Medindo tempo
         clock_t inicio = clock();
+        verifica_tabela = hash_buscar(hash,usuario); // FUNÇÃO DE VERIFICAR A TABELA
+        clock_t fim = clock();
+
         if (verifica_tabela == 1)
         {
             printf("Usuario cadastrado!\n");
@@ -141,11 +160,12 @@ void consultar()
         {
             printf("Usuario nao cadastrado!\n");
         }
-        clock_t fim = clock();
-
-        relatorio.tempoMed += (double)(fim-inicio)/CLOCKS_PER_SEC;
+        
+        relatorio.tempoTotal += (double)(fim-inicio)/CLOCKS_PER_SEC;
         relatorio.contadorTime ++;
+        relatorio.busca++;
     }
+    // Com filtro
     else if (op == 2)
     {
         clock_t inicio = clock();
@@ -153,7 +173,8 @@ void consultar()
         if (verifica_bloom == 1)
         {
             printf("Usuario talvez exista. Iremos consultar tabela\n");
-            // verifica_tabela = funcaochamandotabela
+            verifica_tabela = hash_buscar(hash,usuario); // FUNÇÃO DE VERIFICAR A TABELA
+
             if (verifica_tabela == 1)
             {
                 printf("Usuario cadastrado!\n");
@@ -173,28 +194,32 @@ void consultar()
     
         }
         clock_t fim = clock();
-        relatorio.tempoMed += (double)(fim-inicio)/CLOCKS_PER_SEC;
+        relatorio.tempoTotal += (double)(fim-inicio)/CLOCKS_PER_SEC;
         relatorio.contadorTime ++;
+        relatorio.busca++;
+        relatorio.contadorBloom++;
     }
     else
     {
         printf("Opcao invalida\n");
     }
     
-    relatorio.busca++;
 }
 
 void estatistica()
 {
-    Estatistica zerado = {0};
     
     int taxa = 0;
     double mediaTime = 0;
     if (relatorio.busca != 0)
     {
-        taxa = ((relatorio.falso_positivo*100)/relatorio.busca);
-        mediaTime = (relatorio.tempoMed)/relatorio.contadorTime;
+        mediaTime = (relatorio.tempoTotal)/relatorio.contadorTime;
     }
+    if (relatorio.falso_positivo != 0 && relatorio.contadorBloom != 0)
+    {
+        taxa = ((relatorio.falso_positivo*100)/relatorio.contadorBloom);
+    }
+    
     
     printf("-------------------RELATORIO DOS DADOS-------------------\n");
     if (relatorio.quantidade_elemento == 0 && relatorio.busca == 0)
@@ -209,6 +234,8 @@ void estatistica()
         printf("- Numero de falso positivo: %d\n", relatorio.falso_positivo);
         printf("- Taxa percentual de falso positivo: %d %% \n", taxa);
         printf("- Tempo medio de consulta: %f\n", mediaTime);
+        printf("- Numero de colisoes: %d\n", hash->contador_colisoes);
+        
     }
     
     printf("---------------------------------------------------------\n");
@@ -216,9 +243,10 @@ void estatistica()
 void lote()
 {
     char usuario[12];
-    
+    int verifica_tabela = 0; // TESTE
+    int verifica_bloom = 1; // TESTE
     // Abrindo arquivo
-    FILE *arquivo = fopen(".\\data\\usuarios_100000.txt", "r");
+    FILE *arquivo = fopen(".\\data\\usuarios_1000.txt", "r");
     if (arquivo == NULL)
     {
         printf("Erro ao abrir o arquivo!\n");
@@ -228,7 +256,17 @@ void lote()
     {
         printf("Inserindo o usuario %s na tabela e no filtro\n", usuario);
 
-        relatorio.quantidade_elemento++;
+        verifica_tabela = hash_inserir(hash,usuario); // Função para inserir na hash
+        // Função para inserir no filtro
+        if (verifica_tabela == 1 && verifica_bloom == 1)
+        {
+            printf("Usuario cadastrado\n");
+            relatorio.quantidade_elemento++;
+        }
+        else
+        {
+            printf("Usuario nao foi cadastrado\n");
+        }
     }
     
     fclose(arquivo);

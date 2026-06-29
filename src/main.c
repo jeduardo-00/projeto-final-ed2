@@ -11,7 +11,8 @@ enum Opcoes
     INSERIR,
     CONSULTAR,
     ESTATISTICA,
-    LOTE
+    LOTE,
+    BUSCALOTE,
 };
 
 typedef struct
@@ -33,6 +34,7 @@ void inserir();
 void consultar();
 void estatistica();
 void lote();
+void loteConsulta();
 void menuBusca();
 
 // Variáveis globais
@@ -52,7 +54,6 @@ filtroBloom *bloom;
 
 int main()
 {
-    int 
     // Criando a tabela
     hash = hash_criar((int)TAM/FATORCARGA);
     bloom = criar_bloom(TAM);
@@ -77,8 +78,12 @@ int main()
                 estatistica();
                 break;
             case LOTE:
-                printf("LOTES DADOS\n");
+                printf("LOTES DE DADOS\n");
                 lote();
+                break;
+            case BUSCALOTE:
+                printf("BUSCA EM LOTES DE DADOS\n");
+                loteConsulta();
                 break;
             case SAIR:
                 printf("ENCERRANDO PROGRAMA\n");
@@ -102,7 +107,7 @@ int main()
 void menu()
 {
     printf("------------MENU------------\n");
-    printf("1 - INSERIR USUARIO\n2 - CONSULTAR USUARIO\n3 - ESTATISTICA\n4 - INSERIR USUARIOS EM LOTE\n0 - SAIR\n");
+    printf("1 - INSERIR USUARIO\n2 - CONSULTAR USUARIO\n3 - ESTATISTICA\n4 - INSERIR USUARIOS EM LOTE\n5 - CONSULTAR EM LOTE\n0 - SAIR\n");
     printf("----------------------------\n");
     printf("SELECIONE: ");
 }
@@ -118,7 +123,6 @@ void inserir()
 {
     char usuario[12];
     int verifica_tabela = 0; // TESTE
-    int verifica_bloom = 1; // TESTE
     printf("----------CADASTRO DE USUARIO----------\n");
     printf("Usuario: ");
     scanf("%s", usuario);
@@ -242,7 +246,7 @@ void estatistica()
         printf("- Consultas evitadas: %d\n", relatorio.busca_evitada);
         printf("- Numero de falso positivo: %d\n", relatorio.falso_positivo);
         printf("- Taxa percentual de falso positivo: %.2f %% \n", taxa);
-        printf("- Tempo medio de consulta: %.12f\n", mediaTime);
+        printf("- Tempo medio de consulta: %.15f\n", mediaTime);
         printf("- Numero de colisoes: %d\n", hash->contador_colisoes);
         
     }
@@ -278,5 +282,84 @@ void lote()
         }
     }
     
+    fclose(arquivo);
+}
+void loteConsulta()
+{
+    char usuario[12];
+    int verifica_bloom = 0;
+    int verifica_tabela = 0; 
+    int op = 0;
+
+    // Melhoria para a Parte 3 (Experimentos): Escolher o arquivo dinamicamente
+
+    FILE *arquivo = fopen(".\\data\\consulta_1000.txt", "r");
+    if (arquivo == NULL)
+    {
+        printf("Erro ao abrir o arquivo!\n");
+        return;
+    }
+
+    // 1. PERGUNTA SE QUER COM OU SEM FILTRO ANTES DO LOOP
+    menuBusca();
+    scanf("%d", &op);
+
+    printf("Iniciando consulta em lote. Aguarde...\n");
+
+    // 2. RAMIFICA A LÓGICA ANTES DE ENTRAR NO LAÇO (Evita overhead de CPU)
+    if (op == 1) 
+    {
+        // LAÇO 1: SEM FILTRO (Busca Direta na Hash)
+        while (fscanf(arquivo, "%11s", usuario) == 1)
+        {
+            clock_t inicio = clock();
+            verifica_tabela = hash_buscar(hash, usuario); 
+            clock_t fim = clock();
+
+            // Atualiza métricas parciais (sem Bloom)
+            relatorio.tempoTotal += (double)(fim - inicio) / CLOCKS_PER_SEC;
+            relatorio.contadorTime++;
+            relatorio.busca++;
+        }
+    } 
+    else if (op == 2) 
+    {
+        // LAÇO 2: COM FILTRO (Bloom -> Hash)
+        while (fscanf(arquivo, "%11s", usuario) == 1)
+        {
+            clock_t inicio = clock();
+            
+            verifica_bloom = consultar_bloom(bloom, usuario);
+            
+            if (verifica_bloom == 1)
+            {
+                verifica_tabela = hash_buscar(hash, usuario); 
+                if (verifica_tabela != 1)
+                {
+                    relatorio.falso_positivo++;
+                }
+            }
+            else
+            {
+                relatorio.busca_evitada++;
+            }
+            
+            clock_t fim = clock();
+            
+            // Atualiza métricas completas
+            relatorio.tempoTotal += (double)(fim - inicio) / CLOCKS_PER_SEC;
+            relatorio.contadorTime++;
+            relatorio.busca++;
+            relatorio.contadorBloom++;
+        }
+    } 
+    else 
+    {
+        printf("Opcao invalida. Abortando consulta.\n");
+        fclose(arquivo);
+        return;
+    }
+
+    printf("Consulta em lote finalizada com sucesso!\n");
     fclose(arquivo);
 }
